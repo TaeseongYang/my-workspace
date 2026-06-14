@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카운터 앱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">카운터</h1>
+
+        <div class="bg-blue-50 rounded-lg p-8 mb-8 text-center">
+            <p class="text-gray-600 text-sm mb-2">현재 카운트</p>
+            <p id="counter" class="text-6xl font-bold text-blue-600">0</p>
+        </div>
+
+        <div class="flex gap-4 mb-4">
+            <button id="decreaseBtn" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
+                -1
+            </button>
+            <button id="increaseBtn" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
+                +1
+            </button>
+        </div>
+
+        <button id="resetBtn" class="w-full bg-blue-400 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
+            리셋
+        </button>
+    </div>
+
+    <script>
+        let count = 0;
+        const counterDisplay = document.getElementById('counter');
+
+        document.getElementById('increaseBtn').addEventListener('click', () => {
+            count++;
+            counterDisplay.textContent = count;
+        });
+
+        document.getElementById('decreaseBtn').addEventListener('click', () => {
+            count--;
+            counterDisplay.textContent = count;
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            count = 0;
+            counterDisplay.textContent = count;
+        });
+    </script>
+</body>
+</html>

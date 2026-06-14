@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>오늘의 운세</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 50% 0%, #1a0a2e 0%, #0a0a1a 70%);
+      font-family: 'Noto Serif KR', serif;
+      color: #c4b5fd;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    canvas#stars {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      padding: 2rem 1rem;
+      max-width: 480px;
+      width: 100%;
+    }
+
+    header {
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fbbf24;
+      text-shadow: 0 0 18px #fbbf2480, 0 0 40px #7c3aed80;
+      letter-spacing: 0.1em;
+    }
+
+    header p {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: #7c6f9a;
+    }
+
+    /* --- Card --- */
+    .card-area {
+      perspective: 900px;
+      width: 220px;
+      height: 320px;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card.flipped { transform: rotateY(180deg); }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      border: 1.5px solid #7c3aed60;
+      box-shadow: 0 0 30px #7c3aed40, inset 0 0 20px #1a0a2e60;
+    }
+
+    .card-back {
+      background: linear-gradient(135deg, #1a0a2e, #0d0820);
+    }
+
+    .card-back .question {
+      font-size: 4rem;
+      filter: drop-shadow(0 0 12px #7c3aedaa);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+
+    .card-back .hint {
+      font-size: 0.75rem;
+      color: #7c6f9a;
+    }
+
+    .card-front {
+      background: linear-gradient(135deg, #1a0a2e 0%, #130a22 60%, #0a0818 100%);
+      transform: rotateY(180deg);
+    }
+
+    .card-front .emoji {
+      font-size: 4.5rem;
+      filter: drop-shadow(0 0 16px #fbbf2480);
+    }
+
+    .card-front .card-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fbbf24;
+      letter-spacing: 0.06em;
+      text-shadow: 0 0 10px #fbbf2450;
+    }
+
+    .card-front .card-num {
+      font-size: 0.7rem;
+      color: #7c3aed;
+      letter-spacing: 0.2em;
+    }
+
+    /* Decorative rune border */
+    .card-face::before {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      border-radius: 12px;
+      border: 1px solid #7c3aed30;
+      pointer-events: none;
+    }
+
+    /* --- Fortune message --- */
+    .fortune-box {
+      width: 100%;
+      background: linear-gradient(135deg, #1a0a2e90, #0d082090);
+      border: 1px solid #7c3aed50;
+      border-radius: 14px;
+      padding: 1.4rem 1.6rem;
+      text-align: center;
+      backdrop-filter: blur(6px);
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+      min-height: 96px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+
+    .fortune-box.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .fortune-box .label {
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      color: #7c3aed;
+      text-transform: uppercase;
+    }
+
+    .fortune-box .message {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: #e2d9f3;
+    }
+
+    /* --- Button --- */
+    .btn {
+      position: relative;
+      padding: 0.85rem 2.4rem;
+      font-family: 'Noto Serif KR', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #0a0a1a;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 0 20px #fbbf2460, 0 4px 15px #00000060;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      overflow: hidden;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #ffffff30, transparent);
+      border-radius: inherit;
+      pointer-events: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 32px #fbbf2480, 0 6px 20px #00000070;
+    }
+
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* --- Animations --- */
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: rotateY(0deg) translateX(0); }
+      20% { transform: rotateY(-8deg) translateX(-4px); }
+      40% { transform: rotateY(8deg) translateX(4px); }
+      60% { transform: rotateY(-6deg) translateX(-3px); }
+      80% { transform: rotateY(6deg) translateX(3px); }
+    }
+
+    .card.shaking { animation: shake 0.5s ease; }
+
+    footer {
+      font-size: 0.7rem;
+      color: #4a3f6a;
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stars"></canvas>
+
+  <div class="container">
+    <header>
+      <h1>✦ 오늘의 운세 ✦</h1>
+      <p>카드를 뽑아 오늘의 운명을 확인하세요</p>
+    </header>
+
+    <div class="card-area">
+      <div class="card" id="card">
+        <div class="card-face card-back">
+          <span class="question">🔮</span>
+          <span class="hint">운명의 카드</span>
+        </div>
+        <div class="card-face card-front" id="card-front">
+          <span class="card-num" id="card-num">— I —</span>
+          <span class="emoji" id="card-emoji">🌙</span>
+          <span class="card-name" id="card-name">달의 여신</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fortune-box" id="fortune-box">
+      <span class="label">오늘의 메시지</span>
+      <p class="message" id="fortune-msg"></p>
+    </div>
+
+    <button class="btn" id="draw-btn" onclick="drawCard()">✦ 운세 뽑기 ✦</button>
+
+    <footer>© 2026 오늘의 운세 · 매일 새로운 운명</footer>
+  </div>
+
+  <script>
+    const CARDS = [
+      { num: 'I',    emoji: '🌙',  name: '달의 여신',   msg: '오늘은 직감을 믿으세요. 숨겨진 진실이 서서히 드러날 것입니다.' },
+      { num: 'II',   emoji: '🐉',  name: '불꽃의 용',   msg: '강한 에너지가 당신을 감싸고 있습니다. 두려움 없이 도전하세요.' },
+      { num: 'III',  emoji: '⭐',  name: '별의 지도',   msg: '새로운 인연이 당신의 길을 환히 밝혀줄 것입니다.' },
+      { num: 'IV',   emoji: '🪞',  name: '어둠의 거울', msg: '자신의 내면을 들여다볼 시간입니다. 진정한 자아를 발견하세요.' },
+      { num: 'V',    emoji: '🗝️', name: '황금 열쇠',   msg: '오랫동안 닫혀 있던 문이 열릴 것입니다. 기회를 놓치지 마세요.' },
+      { num: 'VI',   emoji: '🔮',  name: '수정 구슬',   msg: '오늘의 선택이 미래를 바꿉니다. 신중하게, 그러나 과감하게 결정하세요.' },
+      { num: 'VII',  emoji: '🪶',  name: '봉황의 깃털', msg: '시련 끝에 찬란한 새로운 시작이 기다리고 있습니다.' },
+      { num: 'VIII', emoji: '🐈‍⬛', name: '심연의 고양이', msg: '예상치 못한 행운이 찾아옵니다. 마음을 열고 받아들이세요.' },
+    ];
+
+    let drawing = false;
+    let currentIndex = -1;
+
+    function drawCard() {
+      if (drawing) return;
+      drawing = true;
+
+      const btn = document.getElementById('draw-btn');
+      const cardEl = document.getElementById('card');
+      const fortuneBox = document.getElementById('fortune-box');
+
+      btn.disabled = true;
+      fortuneBox.classList.remove('visible');
+
+      // Reset flip if already flipped
+      if (cardEl.classList.contains('flipped')) {
+        cardEl.classList.remove('flipped');
+      }
+
+      // Pick a different card than last time
+      let idx;
+      do { idx = Math.floor(Math.random() * CARDS.length); } while (idx === currentIndex && CARDS.length > 1);
+      currentIndex = idx;
+      const picked = CARDS[idx];
+
+      // Shake, then flip
+      setTimeout(() => {
+        cardEl.classList.add('shaking');
+        setTimeout(() => {
+          cardEl.classList.remove('shaking');
+
+          // Update front face content
+          document.getElementById('card-num').textContent = `— ${picked.num} —`;
+          document.getElementById('card-emoji').textContent = picked.emoji;
+          document.getElementById('card-name').textContent = picked.name;
+
+          // Flip
+          cardEl.classList.add('flipped');
+
+          // Show fortune message after flip
+          setTimeout(() => {
+            document.getElementById('fortune-msg').textContent = picked.msg;
+            fortuneBox.classList.add('visible');
+
+            btn.disabled = false;
+            drawing = false;
+          }, 700);
+        }, 520);
+      }, 80);
+    }
+
+    // --- Starfield canvas ---
+    (function () {
+      const canvas = document.getElementById('stars');
+      const ctx = canvas.getContext('2d');
+      let W, H, stars = [];
+
+      function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+
+      function initStars() {
+        stars = Array.from({ length: 160 }, () => ({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: Math.random() * 1.4 + 0.3,
+          alpha: Math.random(),
+          speed: Math.random() * 0.004 + 0.001,
+          phase: Math.random() * Math.PI * 2,
+        }));
+      }
+
+      function draw(t) {
+        ctx.clearRect(0, 0, W, H);
+        for (const s of stars) {
+          const a = 0.3 + 0.7 * Math.abs(Math.sin(s.phase + t * s.speed));
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(196,181,253,${a.toFixed(2)})`;
+          ctx.fill();
+        }
+        requestAnimationFrame(draw);
+      }
+
+      resize();
+      initStars();
+      requestAnimationFrame(draw);
+      window.addEventListener('resize', () => { resize(); initStars(); });
+    })();
+  </script>
+</body>
+</html>

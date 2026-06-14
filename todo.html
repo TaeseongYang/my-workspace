@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50:  '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          },
+          fontFamily: {
+            sans: ['Noto Sans KR', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideOut {
+      to { opacity: 0; transform: translateX(24px); }
+    }
+    .todo-enter { animation: slideIn 0.2s ease forwards; }
+    .todo-exit  { animation: slideOut 0.18s ease forwards; }
+
+    input[type="checkbox"].todo-check {
+      accent-color: #6366f1;
+      width: 1.125rem;
+      height: 1.125rem;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .todo-item .btn-delete {
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .todo-item:hover .btn-delete {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+  <div class="max-w-lg mx-auto px-4 py-12">
+
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-8">
+      <h1 class="text-3xl font-bold text-gray-800">My Todos</h1>
+      <span id="badge" class="bg-primary-100 text-primary-600 text-sm font-semibold rounded-full px-3 py-0.5 hidden"></span>
+    </header>
+
+    <!-- Input -->
+    <section class="flex shadow-sm mb-6">
+      <input
+        id="todo-input"
+        type="text"
+        placeholder="할 일을 입력하세요..."
+        class="flex-1 min-w-0 rounded-l-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+      />
+      <button
+        id="add-btn"
+        class="bg-primary-600 hover:bg-primary-700 active:bg-primary-700 text-white px-5 py-3 rounded-r-xl font-medium text-sm transition-colors whitespace-nowrap"
+      >
+        추가
+      </button>
+    </section>
+
+    <!-- Todo List -->
+    <main>
+      <ul id="todo-list" class="flex flex-col gap-2"></ul>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="text-center py-16 hidden">
+        <div class="text-5xl mb-4">📋</div>
+        <p class="text-gray-400 text-sm">할 일이 없습니다. 위에서 추가해 보세요!</p>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer id="footer" class="flex items-center justify-between mt-6 pt-4 border-t border-gray-100 hidden">
+      <span id="remaining-count" class="text-sm text-gray-400"></span>
+      <button
+        id="clear-btn"
+        class="text-sm text-red-400 hover:text-red-600 transition-colors hidden"
+      >
+        완료 항목 삭제
+      </button>
+    </footer>
+
+  </div>
+
+  <script>
+    'use strict';
+
+    const STORAGE_KEY = 'todo-app-v1';
+    let todos = [];
+    let animateId = null;
+
+    function loadFromStorage() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+    }
+
+    function addTodo(text) {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      const id = crypto.randomUUID();
+      todos.unshift({ id, text: trimmed, completed: false });
+      animateId = id;
+      save();
+      render();
+      animateId = null;
+    }
+
+    function toggleTodo(id) {
+      const todo = todos.find(t => t.id === id);
+      if (todo) {
+        todo.completed = !todo.completed;
+        save();
+        render();
+      }
+    }
+
+    function deleteTodo(id) {
+      const li = document.querySelector(`[data-id="${id}"]`);
+      if (li) {
+        li.classList.add('todo-exit');
+        setTimeout(() => {
+          todos = todos.filter(t => t.id !== id);
+          save();
+          render();
+        }, 180);
+      }
+    }
+
+    function clearCompleted() {
+      todos = todos.filter(t => !t.completed);
+      save();
+      render();
+    }
+
+    function buildItemHTML(todo) {
+      const textClass = todo.completed
+        ? 'flex-1 text-sm text-gray-400 line-through select-none'
+        : 'flex-1 text-sm text-gray-700 select-none';
+      const isNew = todo.id === animateId ? ' todo-enter' : '';
+
+      return `
+        <li
+          data-id="${todo.id}"
+          class="todo-item flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-gray-100 shadow-sm${isNew}"
+        >
+          <input
+            type="checkbox"
+            class="todo-check"
+            ${todo.completed ? 'checked' : ''}
+            aria-label="완료 표시"
+          />
+          <span class="${textClass}">${escapeHTML(todo.text)}</span>
+          <button class="btn-delete text-gray-300 hover:text-red-400 transition-colors" aria-label="삭제">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+              <path d="M10 11v6"></path>
+              <path d="M14 11v6"></path>
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+            </svg>
+          </button>
+        </li>
+      `;
+    }
+
+    function escapeHTML(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function render() {
+      const list = document.getElementById('todo-list');
+      const emptyState = document.getElementById('empty-state');
+      const badge = document.getElementById('badge');
+      const footer = document.getElementById('footer');
+      const remainingCount = document.getElementById('remaining-count');
+      const clearBtn = document.getElementById('clear-btn');
+
+      list.innerHTML = todos.map(buildItemHTML).join('');
+
+      const activeCount = todos.filter(t => !t.completed).length;
+      const completedCount = todos.filter(t => t.completed).length;
+
+      // Empty state
+      if (todos.length === 0) {
+        emptyState.classList.remove('hidden');
+        footer.classList.add('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+        footer.classList.remove('hidden');
+      }
+
+      // Badge
+      if (activeCount > 0) {
+        badge.textContent = `${activeCount}개`;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      // Footer
+      remainingCount.textContent = activeCount > 0
+        ? `${activeCount}개 남음`
+        : '모두 완료했습니다!';
+
+      if (completedCount > 0) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+    }
+
+    function bindEvents() {
+      const input = document.getElementById('todo-input');
+      const addBtn = document.getElementById('add-btn');
+      const list = document.getElementById('todo-list');
+      const clearBtn = document.getElementById('clear-btn');
+
+      function handleAdd() {
+        addTodo(input.value);
+        input.value = '';
+        input.focus();
+      }
+
+      addBtn.addEventListener('click', handleAdd);
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleAdd();
+      });
+
+      list.addEventListener('click', (e) => {
+        const li = e.target.closest('[data-id]');
+        if (!li) return;
+        const id = li.dataset.id;
+
+        if (e.target.matches('input.todo-check')) {
+          toggleTodo(id);
+        } else if (e.target.closest('.btn-delete')) {
+          deleteTodo(id);
+        }
+      });
+
+      clearBtn.addEventListener('click', clearCompleted);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      todos = loadFromStorage();
+      render();
+      bindEvents();
+      document.getElementById('todo-input').focus();
+    });
+  </script>
+</body>
+</html>
