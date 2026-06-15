@@ -1,5 +1,6 @@
 {
     "plansDirectory": ".claude/plans",
     "model": "Haiku",
-    "outputStyle": "Default"
+    "outputStyle": "Default",
+    "defaultMode": "plan"
 }
