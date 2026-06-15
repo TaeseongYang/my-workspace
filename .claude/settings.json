@@ -1,6 +1,4 @@
 {
-    "$schema": "https://json.schemastore.org/claude-code-settings.json",
-    "plansDirectory": ".claude/plans",
     "model": "Haiku",
     "outputStyle": "Default",
     "defaultMode": "plan"
