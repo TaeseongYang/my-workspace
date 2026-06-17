@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Layers } from 'lucide-react'
+import { Layers, ChevronLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,14 +12,24 @@ export const metadata: Metadata = { title: '로그인' }
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40 p-4">
+      {/* 좌상단 홈으로 돌아가기 */}
+      <div className="absolute left-4 top-4">
+        <Link href="/">
+          <Button variant="ghost" size="sm" className="gap-2">
+            <ChevronLeft className="size-4" />
+            홈으로
+          </Button>
+        </Link>
+      </div>
       {/* 우상단 테마 토글 */}
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <Link href="/" className="mx-auto mb-2 flex items-center gap-2">
+          <Link href="/" className="mx-auto mb-2 flex items-center justify-center gap-2">
             <Layers className="size-6 text-primary" />
+            <span className="text-sm font-semibold">스타터킷</span>
           </Link>
           <CardTitle className="text-2xl">로그인</CardTitle>
           <CardDescription>이메일과 비밀번호를 입력하세요</CardDescription>
